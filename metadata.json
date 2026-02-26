@@ -1,0 +1,5 @@
+{
+  "name": "AIML4Me 3D - Matrix Visualization",
+  "description": "Interactive 3D matrix and neural network layer visualization powered by Google Sheets.",
+  "requestFramePermissions": []
+}
