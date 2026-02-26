@@ -161,7 +161,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
         y: edgeY,
         z: edgeZ,
         line: {
-          color: 'rgba(150, 150, 150, 0.15)',
+          color: 'rgba(100, 116, 139, 0.3)',
           width: 1
         },
         showlegend: false,
