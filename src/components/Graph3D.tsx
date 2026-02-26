@@ -226,7 +226,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data, showLabels = false, show
         Plotly.purge(plotRef.current);
       }
     };
-  }, [data]);
+  }, [data, showLabels, showLayerNames]);
 
   return (
     <div className="w-full h-[600px] bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
