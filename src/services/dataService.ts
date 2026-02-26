@@ -1,12 +1,12 @@
 import { GASResponse } from '../types';
 
-export const fetchDataFromGAS = async (spreadsheetId: string): Promise<GASResponse> => {
-  const gasUrl = import.meta.env.VITE_GAS_URL;
+export const fetchDataFromGAS = async (spreadsheetId: string, gasUrl?: string): Promise<GASResponse> => {
+  const finalGasUrl = gasUrl || import.meta.env.VITE_GAS_URL;
   
-  if (!gasUrl) {
+  if (!finalGasUrl) {
     return {
       status: 'error',
-      message: 'VITE_GAS_URL is not configured. Please deploy your Google Apps Script as a Web App and add the URL to your environment variables.'
+      message: 'Google Apps Script URL is not configured. Please provide it via URL parameter (?gasUrl=...) or environment variable (VITE_GAS_URL).'
     };
   }
 
@@ -14,7 +14,7 @@ export const fetchDataFromGAS = async (spreadsheetId: string): Promise<GASRespon
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    const response = await fetch(`${gasUrl}?spreadsheetId=${spreadsheetId}`, {
+    const response = await fetch(`${finalGasUrl}?spreadsheetId=${spreadsheetId}`, {
       signal: controller.signal
     });
     
