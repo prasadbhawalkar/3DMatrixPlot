@@ -13,74 +13,100 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
     if (!plotRef.current || !data.layers.length) return;
 
     const traces: any[] = [];
-    const zSpacing = 2; // Vertical spacing between layers
+    const zSpacing = 4; // Increased spacing for better edge visibility
+
+    // Pre-calculate all node positions to draw edges
+    const allLayerNodes: { x: number; y: number; z: number; val: number }[][] = [];
 
     data.layers.forEach((layer, layerIdx) => {
       const z = layerIdx * zSpacing;
       const { rows, cols, values, shape } = layer;
-      
-      const xCoords: number[] = [];
-      const yCoords: number[] = [];
-      const zCoords: number[] = [];
-      const text: string[] = [];
+      const layerNodes: { x: number; y: number; z: number; val: number }[] = [];
 
-      // Generate coordinates based on shape
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           let x = 0;
           let y = 0;
 
           if (shape === 'rectangle') {
-            x = c - (cols - 1) / 2;
-            y = r - (rows - 1) / 2;
+            x = (c - (cols - 1) / 2) * 1.5;
+            y = (r - (rows - 1) / 2) * 1.5;
           } else if (shape === 'circle') {
             const angle = (2 * Math.PI * c) / cols;
-            const radius = r + 1;
+            const radius = (r + 1) * 1.2;
             x = radius * Math.cos(angle);
             y = radius * Math.sin(angle);
           } else if (shape === 'triangle') {
-            // Simple triangle grid mapping
-            x = c - r / 2;
-            y = r * (Math.sqrt(3) / 2);
+            x = (c - r / 2) * 1.5;
+            y = r * (Math.sqrt(3) / 2) * 1.5;
+            // Center the triangle
+            y -= (rows * Math.sqrt(3) / 4);
           }
 
-          xCoords.push(x);
-          yCoords.push(y);
-          zCoords.push(z);
-          text.push(`Val: ${values[r]?.[c] ?? 0}`);
+          layerNodes.push({ x, y, z, val: values[r]?.[c] ?? 0 });
+        }
+      }
+      allLayerNodes.push(layerNodes);
+
+      // Add the layer nodes trace
+      traces.push({
+        x: layerNodes.map(n => n.x),
+        y: layerNodes.map(n => n.y),
+        z: layerNodes.map(n => n.z),
+        mode: 'markers',
+        type: 'scatter3d',
+        name: layer.name,
+        text: layerNodes.map(n => `Value: ${n.val}`),
+        hoverinfo: 'text+name',
+        marker: {
+          size: 6,
+          color: layer.color || `hsl(${layerIdx * 60}, 70%, 50%)`,
+          opacity: 0.9,
+          line: { color: 'white', width: 0.5 }
+        }
+      });
+    });
+
+    // Add inter-layer edges (Fully Connected)
+    for (let i = 0; i < allLayerNodes.length - 1; i++) {
+      const currentLayer = allLayerNodes[i];
+      const nextLayer = allLayerNodes[i + 1];
+
+      // To prevent performance issues with massive matrices, 
+      // we limit the number of lines drawn if the layers are huge
+      const maxEdges = 200;
+      let edgeCount = 0;
+
+      const edgeX: (number | null)[] = [];
+      const edgeY: (number | null)[] = [];
+      const edgeZ: (number | null)[] = [];
+
+      for (const source of currentLayer) {
+        for (const target of nextLayer) {
+          if (edgeCount > maxEdges) break;
+          
+          edgeX.push(source.x, target.x, null);
+          edgeY.push(source.y, target.y, null);
+          edgeZ.push(source.z, target.z, null);
+          edgeCount++;
         }
       }
 
-      // Add the layer nodes
       traces.push({
-        x: xCoords,
-        y: yCoords,
-        z: zCoords,
-        mode: 'markers+text',
         type: 'scatter3d',
-        name: layer.name,
-        text: text,
-        textposition: 'top center',
-        marker: {
-          size: 8,
-          color: layer.color || `hsl(${layerIdx * 60}, 70%, 50%)`,
-          opacity: 0.8,
-          line: {
-            color: 'white',
-            width: 1
-          }
+        mode: 'lines',
+        x: edgeX,
+        y: edgeY,
+        z: edgeZ,
+        line: {
+          color: 'rgba(150, 150, 150, 0.15)',
+          width: 1
         },
-        hoverinfo: 'text+name'
+        showlegend: false,
+        hoverinfo: 'none',
+        name: `Edges ${i}→${i+1}`
       });
-
-      // Add connections between layers if not the last layer
-      if (layerIdx < data.layers.length - 1) {
-        const nextLayer = data.layers[layerIdx + 1];
-        // For simplicity, connect corresponding indices or center points
-        // Here we'll just draw a few sample connections to show the 3D structure
-        // In a real neural net, this would be based on weights
-      }
-    });
+    }
 
     const layout: Partial<Plotly.Layout> = {
       margin: { l: 0, r: 0, b: 0, t: 0 },
