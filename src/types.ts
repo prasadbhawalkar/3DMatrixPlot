@@ -7,6 +7,8 @@ export interface MatrixLayer {
   rows: number;
   cols: number;
   values: Matrix;
+  labels?: string[][];
+  urls?: string[][];
   shape: LayerShape;
   color?: string;
 }

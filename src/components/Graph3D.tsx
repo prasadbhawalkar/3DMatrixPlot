@@ -20,8 +20,8 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
 
     data.layers.forEach((layer, layerIdx) => {
       const z = layerIdx * zSpacing;
-      const { rows, cols, values, shape } = layer;
-      const layerNodes: { x: number; y: number; z: number; val: number }[] = [];
+      const { rows, cols, values, labels, urls, shape } = layer;
+      const layerNodes: { x: number; y: number; z: number; val: number; label?: string; url?: string; r: number; c: number }[] = [];
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -39,14 +39,70 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
           } else if (shape === 'triangle') {
             x = (c - r / 2) * 1.5;
             y = r * (Math.sqrt(3) / 2) * 1.5;
-            // Center the triangle
             y -= (rows * Math.sqrt(3) / 4);
           }
 
-          layerNodes.push({ x, y, z, val: values[r]?.[c] ?? 0 });
+          layerNodes.push({ 
+            x, y, z, 
+            val: values[r]?.[c] ?? 0,
+            label: labels?.[r]?.[c],
+            url: urls?.[r]?.[c],
+            r, c 
+          });
         }
       }
-      allLayerNodes.push(layerNodes);
+      allLayerNodes.push(layerNodes as any);
+
+      // Add intra-layer edges to outline the shape
+      const intraX: (number | null)[] = [];
+      const intraY: (number | null)[] = [];
+      const intraZ: (number | null)[] = [];
+
+      const getNode = (r: number, c: number) => layerNodes.find(n => n.r === r && n.c === c);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const current = getNode(r, c);
+          if (!current) continue;
+
+          // Horizontal/Ring connections
+          const right = getNode(r, (c + 1) % (shape === 'circle' ? cols : Infinity));
+          if (right && (shape === 'circle' || c + 1 < cols)) {
+            intraX.push(current.x, right.x, null);
+            intraY.push(current.y, right.y, null);
+            intraZ.push(current.z, right.z, null);
+          }
+
+          // Vertical/Radial connections
+          const down = getNode(r + 1, c);
+          if (down) {
+            intraX.push(current.x, down.x, null);
+            intraY.push(current.y, down.y, null);
+            intraZ.push(current.z, down.z, null);
+          }
+
+          // Diagonal connection for Triangle
+          if (shape === 'triangle') {
+            const diag = getNode(r + 1, c - 1);
+            if (diag) {
+              intraX.push(current.x, diag.x, null);
+              intraY.push(current.y, diag.y, null);
+              intraZ.push(current.z, diag.z, null);
+            }
+          }
+        }
+      }
+
+      traces.push({
+        type: 'scatter3d',
+        mode: 'lines',
+        x: intraX,
+        y: intraY,
+        z: intraZ,
+        line: { color: layer.color || '#ccc', width: 2, opacity: 0.4 },
+        showlegend: false,
+        hoverinfo: 'none'
+      });
 
       // Add the layer nodes trace
       traces.push({
@@ -56,14 +112,20 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
         mode: 'markers',
         type: 'scatter3d',
         name: layer.name,
-        text: layerNodes.map(n => `Value: ${n.val}`),
+        text: layerNodes.map(n => {
+          let t = `Value: ${n.val}`;
+          if (n.label) t += `<br>Label: ${n.label}`;
+          if (n.url) t += `<br>URL: ${n.url}`;
+          return t;
+        }),
         hoverinfo: 'text+name',
         marker: {
           size: 6,
           color: layer.color || `hsl(${layerIdx * 60}, 70%, 50%)`,
           opacity: 0.9,
           line: { color: 'white', width: 0.5 }
-        }
+        },
+        customdata: layerNodes.map(n => n.url)
       });
     });
 
@@ -133,6 +195,16 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
     };
 
     Plotly.newPlot(plotRef.current, traces, layout, config);
+
+    // Add click handler for URLs
+    (plotRef.current as any).on('plotly_click', (data: any) => {
+      if (data.points && data.points[0] && data.points[0].customdata) {
+        const url = data.points[0].customdata;
+        if (url && typeof url === 'string' && url.startsWith('http')) {
+          window.open(url, '_blank');
+        }
+      }
+    });
 
     return () => {
       if (plotRef.current) {
