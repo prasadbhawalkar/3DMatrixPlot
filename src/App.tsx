@@ -21,6 +21,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showLabels, setShowLabels] = useState<boolean>(false);
   const [showLayerNames, setShowLayerNames] = useState<boolean>(true);
+  const [showInterLayerEdges, setShowInterLayerEdges] = useState<boolean>(true);
 
   const loadData = useCallback(async () => {
     if (!spreadsheetId) return;
@@ -108,6 +109,16 @@ export default function App() {
                   />
                   <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Node Labels</span>
                 </label>
+
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={showInterLayerEdges} 
+                    onChange={(e) => setShowInterLayerEdges(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Inter-layer Edges</span>
+                </label>
               </div>
             </div>
             {data && (
@@ -159,6 +170,7 @@ export default function App() {
                     data={data} 
                     showLabels={showLabels} 
                     showLayerNames={showLayerNames} 
+                    showInterLayerEdges={showInterLayerEdges}
                   />
                 </motion.div>
               ) : (

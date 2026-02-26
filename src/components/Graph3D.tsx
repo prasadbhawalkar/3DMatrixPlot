@@ -6,9 +6,15 @@ interface Graph3DProps {
   data: Graph3DData;
   showLabels?: boolean;
   showLayerNames?: boolean;
+  showInterLayerEdges?: boolean;
 }
 
-export const Graph3D: React.FC<Graph3DProps> = ({ data, showLabels = false, showLayerNames = false }) => {
+export const Graph3D: React.FC<Graph3DProps> = ({ 
+  data, 
+  showLabels = false, 
+  showLayerNames = false,
+  showInterLayerEdges = true 
+}) => {
   const plotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,44 +151,46 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data, showLabels = false, show
     });
 
     // Add inter-layer edges (Fully Connected)
-    for (let i = 0; i < allLayerNodes.length - 1; i++) {
-      const currentLayer = allLayerNodes[i];
-      const nextLayer = allLayerNodes[i + 1];
+    if (showInterLayerEdges) {
+      for (let i = 0; i < allLayerNodes.length - 1; i++) {
+        const currentLayer = allLayerNodes[i];
+        const nextLayer = allLayerNodes[i + 1];
 
-      // To prevent performance issues with massive matrices, 
-      // we limit the number of lines drawn if the layers are huge
-      const maxEdges = 500;
-      let edgeCount = 0;
+        // To prevent performance issues with massive matrices, 
+        // we limit the number of lines drawn if the layers are huge
+        const maxEdges = 500;
+        let edgeCount = 0;
 
-      const edgeX: (number | null)[] = [];
-      const edgeY: (number | null)[] = [];
-      const edgeZ: (number | null)[] = [];
+        const edgeX: (number | null)[] = [];
+        const edgeY: (number | null)[] = [];
+        const edgeZ: (number | null)[] = [];
 
-      for (const source of currentLayer) {
-        for (const target of nextLayer) {
-          if (edgeCount > maxEdges) break;
-          
-          edgeX.push(source.x, target.x, null);
-          edgeY.push(source.y, target.y, null);
-          edgeZ.push(source.z, target.z, null);
-          edgeCount++;
+        for (const source of currentLayer) {
+          for (const target of nextLayer) {
+            if (edgeCount > maxEdges) break;
+            
+            edgeX.push(source.x, target.x, null);
+            edgeY.push(source.y, target.y, null);
+            edgeZ.push(source.z, target.z, null);
+            edgeCount++;
+          }
         }
-      }
 
-      traces.push({
-        type: 'scatter3d',
-        mode: 'lines',
-        x: edgeX,
-        y: edgeY,
-        z: edgeZ,
-        line: {
-          color: data.layers[i].edgeColor || 'rgba(71, 85, 105, 0.6)', // Use specified edgeColor or solid slate gray
-          width: 2.0
-        },
-        showlegend: false,
-        hoverinfo: 'none',
-        name: `Edges ${i}→${i+1}`
-      });
+        traces.push({
+          type: 'scatter3d',
+          mode: 'lines',
+          x: edgeX,
+          y: edgeY,
+          z: edgeZ,
+          line: {
+            color: data.layers[i].edgeColor || 'rgba(71, 85, 105, 0.6)', // Use specified edgeColor or solid slate gray
+            width: 2.0
+          },
+          showlegend: false,
+          hoverinfo: 'none',
+          name: `Edges ${i}→${i+1}`
+        });
+      }
     }
 
     const layout: Partial<Plotly.Layout> = {
@@ -226,7 +234,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data, showLabels = false, show
         Plotly.purge(plotRef.current);
       }
     };
-  }, [data, showLabels, showLayerNames]);
+  }, [data, showLabels, showLayerNames, showInterLayerEdges]);
 
   return (
     <div className="w-full h-[600px] bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
