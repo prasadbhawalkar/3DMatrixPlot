@@ -8,7 +8,7 @@ import { Brain, Layers, Info, Play, RefreshCw, Github, AlertCircle, Database, Ex
 export default function App() {
   const [spreadsheetId, setSpreadsheetId] = useState<string>(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('sheetId') || import.meta.env.VITE_SPREADSHEET_ID || '';
+    return urlParams.get('sheetId') || import.meta.env.VITE_SPREADSHEET_ID || '1Ek2NEW8gJzwQ_Z3RoP3bDHRKQpgPtqya3MjG8xEW_n8';
   });
 
   const [data, setData] = useState<Graph3DData | null>(null);
@@ -78,38 +78,19 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="grid lg:grid-cols-12 gap-10">
-          {/* Left Column: Config */}
+          {/* Left Column: Info */}
           <div className="lg:col-span-4 space-y-8">
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Database size={18} className="text-indigo-600" />
-                <h2 className="font-semibold text-zinc-800">Data Source</h2>
+            <section className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+              <div className="flex items-center gap-2 mb-3 text-indigo-700">
+                <Database size={18} />
+                <h3 className="font-semibold text-sm uppercase tracking-wider">Active Dataset</h3>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">
-                    Spreadsheet ID
-                  </label>
-                  <input 
-                    type="text"
-                    value={spreadsheetId}
-                    onChange={handleSheetIdChange}
-                    placeholder="Enter Google Sheet ID..."
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all font-mono text-sm"
-                  />
-                  <p className="mt-2 text-[10px] text-zinc-400 leading-relaxed">
-                    Tip: You can also pass <code>?sheetId=...</code> in the URL.
-                  </p>
-                </div>
-
-                {!spreadsheetId && (
-                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
-                    <AlertCircle size={18} className="text-amber-600 shrink-0" />
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                      Please provide a Google Spreadsheet ID to visualize your matrix data.
-                    </p>
-                  </div>
-                )}
+              <p className="text-xs text-indigo-900/70 font-mono break-all mb-4">
+                ID: {spreadsheetId}
+              </p>
+              <div className="flex items-center gap-2 text-xs text-indigo-600 font-medium">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                Connected to Google Sheets
               </div>
             </section>
 
