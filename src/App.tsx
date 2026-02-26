@@ -19,6 +19,8 @@ export default function App() {
   const [data, setData] = useState<Graph3DData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLabels, setShowLabels] = useState<boolean>(false);
+  const [showLayerNames, setShowLayerNames] = useState<boolean>(true);
 
   const loadData = useCallback(async () => {
     if (!spreadsheetId) return;
@@ -80,10 +82,34 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="space-y-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-zinc-800 flex items-center gap-2">
-              <Layers size={18} className="text-indigo-600" />
-              3D Matrix Visualization
-            </h2>
+            <div className="flex items-center gap-6">
+              <h2 className="font-semibold text-zinc-800 flex items-center gap-2">
+                <Layers size={18} className="text-indigo-600" />
+                3D Matrix Visualization
+              </h2>
+              
+              <div className="flex items-center gap-4 border-l border-zinc-200 pl-6">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={showLayerNames} 
+                    onChange={(e) => setShowLayerNames(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Layer Names</span>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={showLabels} 
+                    onChange={(e) => setShowLabels(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Node Labels</span>
+                </label>
+              </div>
+            </div>
             {data && (
               <div className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
                 {data.layers.length} Layers Loaded
@@ -129,7 +155,11 @@ export default function App() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <Graph3D data={data} />
+                  <Graph3D 
+                    data={data} 
+                    showLabels={showLabels} 
+                    showLayerNames={showLayerNames} 
+                  />
                 </motion.div>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-2xl">

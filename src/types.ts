@@ -11,6 +11,7 @@ export interface MatrixLayer {
   urls?: string[][];
   shape: LayerShape;
   color?: string;
+  edgeColor?: string;
 }
 
 export interface Graph3DData {

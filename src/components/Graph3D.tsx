@@ -4,9 +4,11 @@ import { Graph3DData, MatrixLayer } from '../types';
 
 interface Graph3DProps {
   data: Graph3DData;
+  showLabels?: boolean;
+  showLayerNames?: boolean;
 }
 
-export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
+export const Graph3D: React.FC<Graph3DProps> = ({ data, showLabels = false, showLayerNames = false }) => {
   const plotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,15 +111,12 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
         x: layerNodes.map(n => n.x),
         y: layerNodes.map(n => n.y),
         z: layerNodes.map(n => n.z),
-        mode: 'markers',
+        mode: showLabels ? 'markers+text' : 'markers',
         type: 'scatter3d',
         name: layer.name,
-        text: layerNodes.map(n => {
-          let t = `Value: ${n.val}`;
-          if (n.label) t += `<br>Label: ${n.label}`;
-          if (n.url) t += `<br>URL: ${n.url}`;
-          return t;
-        }),
+        text: layerNodes.map(n => n.label || n.val.toString()),
+        textposition: 'top center',
+        textfont: { size: 10, color: '#444' },
         hoverinfo: 'text+name',
         marker: {
           size: 6,
@@ -127,6 +126,22 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
         },
         customdata: layerNodes.map(n => n.url)
       });
+
+      // Add Layer Name Label if enabled
+      if (showLayerNames) {
+        traces.push({
+          x: [-5], // Position to the left of the layer
+          y: [0],
+          z: [z],
+          mode: 'text',
+          type: 'scatter3d',
+          text: [layer.name],
+          textposition: 'middle left',
+          textfont: { size: 14, color: layer.color || '#333', weight: 'bold' },
+          showlegend: false,
+          hoverinfo: 'none'
+        });
+      }
     });
 
     // Add inter-layer edges (Fully Connected)
@@ -136,7 +151,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
 
       // To prevent performance issues with massive matrices, 
       // we limit the number of lines drawn if the layers are huge
-      const maxEdges = 200;
+      const maxEdges = 500;
       let edgeCount = 0;
 
       const edgeX: (number | null)[] = [];
@@ -161,8 +176,8 @@ export const Graph3D: React.FC<Graph3DProps> = ({ data }) => {
         y: edgeY,
         z: edgeZ,
         line: {
-          color: 'rgba(100, 116, 139, 0.3)',
-          width: 1
+          color: data.layers[i].edgeColor || 'rgba(71, 85, 105, 0.6)', // Use specified edgeColor or solid slate gray
+          width: 2.0
         },
         showlegend: false,
         hoverinfo: 'none',
