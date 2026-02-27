@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Analytics } from '@vercel/analytics/react';
 import { Graph3D } from './components/Graph3D';
 import { Graph3DData, GASResponse } from './types';
 import { fetchDataFromGAS } from './services/dataService';
@@ -216,6 +217,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 }
