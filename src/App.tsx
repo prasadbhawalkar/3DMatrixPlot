@@ -19,9 +19,25 @@ export default function App() {
   const [data, setData] = useState<Graph3DData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLabels, setShowLabels] = useState<boolean>(false);
-  const [showLayerNames, setShowLayerNames] = useState<boolean>(true);
-  const [showInterLayerEdges, setShowInterLayerEdges] = useState<boolean>(true);
+  
+  // Staged states (for UI controls)
+  const [stagedShowLabels, setStagedShowLabels] = useState<boolean>(false);
+  const [stagedShowLayerNames, setStagedShowLayerNames] = useState<boolean>(true);
+  const [stagedShowInterLayerEdges, setStagedShowInterLayerEdges] = useState<boolean>(true);
+  const [stagedZSpacing, setStagedZSpacing] = useState<number>(4);
+
+  // Active states (passed to Graph3D)
+  const [activeShowLabels, setActiveShowLabels] = useState<boolean>(false);
+  const [activeShowLayerNames, setActiveShowLayerNames] = useState<boolean>(true);
+  const [activeShowInterLayerEdges, setActiveShowInterLayerEdges] = useState<boolean>(true);
+  const [activeZSpacing, setActiveZSpacing] = useState<number>(4);
+
+  const handleRetrigger = () => {
+    setActiveShowLabels(stagedShowLabels);
+    setActiveShowLayerNames(stagedShowLayerNames);
+    setActiveShowInterLayerEdges(stagedShowInterLayerEdges);
+    setActiveZSpacing(stagedZSpacing);
+  };
 
   const loadData = useCallback(async () => {
     if (!spreadsheetId) return;
@@ -89,36 +105,60 @@ export default function App() {
                 3D Matrix Visualization
               </h2>
               
-              <div className="flex items-center gap-4 border-l border-zinc-200 pl-6">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={showLayerNames} 
-                    onChange={(e) => setShowLayerNames(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Layer Names</span>
-                </label>
-                
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={showLabels} 
-                    onChange={(e) => setShowLabels(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Node Labels</span>
-                </label>
+              <div className="flex flex-wrap items-center gap-6 border-l border-zinc-200 pl-6">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={stagedShowLayerNames} 
+                      onChange={() => setStagedShowLayerNames(!stagedShowLayerNames)}
+                      className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Layer Names</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={stagedShowLabels} 
+                      onChange={() => setStagedShowLabels(!stagedShowLabels)}
+                      className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Node Labels</span>
+                  </label>
 
-                <label className="flex items-center gap-2 cursor-pointer group">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={stagedShowInterLayerEdges} 
+                      onChange={() => setStagedShowInterLayerEdges(!stagedShowInterLayerEdges)}
+                      className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Inter-layer Edges</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-3 border-l border-zinc-200 pl-6">
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Z-Spacing</span>
                   <input 
-                    type="checkbox" 
-                    checked={showInterLayerEdges} 
-                    onChange={(e) => setShowInterLayerEdges(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                    type="range" 
+                    min="1" 
+                    max="15" 
+                    step="0.5"
+                    value={stagedZSpacing}
+                    onChange={(e) => setStagedZSpacing(parseFloat(e.target.value))}
+                    className="w-32 h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                   />
-                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Inter-layer Edges</span>
-                </label>
+                  <span className="text-xs font-mono font-bold text-indigo-600 w-8">{stagedZSpacing}</span>
+                </div>
+
+                <button 
+                  onClick={handleRetrigger}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-indigo-100"
+                >
+                  <Play size={14} fill="currentColor" />
+                  Retrigger Rendering
+                </button>
               </div>
             </div>
             {data && (
@@ -168,9 +208,10 @@ export default function App() {
                 >
                   <Graph3D 
                     data={data} 
-                    showLabels={showLabels} 
-                    showLayerNames={showLayerNames} 
-                    showInterLayerEdges={showInterLayerEdges}
+                    showLabels={activeShowLabels} 
+                    showLayerNames={activeShowLayerNames} 
+                    showInterLayerEdges={activeShowInterLayerEdges}
+                    zSpacing={activeZSpacing}
                   />
                 </motion.div>
               ) : (

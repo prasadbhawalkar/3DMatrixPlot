@@ -7,13 +7,15 @@ interface Graph3DProps {
   showLabels?: boolean;
   showLayerNames?: boolean;
   showInterLayerEdges?: boolean;
+  zSpacing?: number;
 }
 
 export const Graph3D: React.FC<Graph3DProps> = ({ 
   data, 
   showLabels = false, 
   showLayerNames = false,
-  showInterLayerEdges = true 
+  showInterLayerEdges = true,
+  zSpacing = 4
 }) => {
   const plotRef = useRef<HTMLDivElement>(null);
 
@@ -21,15 +23,13 @@ export const Graph3D: React.FC<Graph3DProps> = ({
     if (!plotRef.current || !data.layers.length) return;
 
     const traces: any[] = [];
-    const zSpacing = 4; // Increased spacing for better edge visibility
 
     // Pre-calculate all node positions to draw edges
     const allLayerNodes: { x: number; y: number; z: number; val: number }[][] = [];
 
     data.layers.forEach((layer, layerIdx) => {
       const z = layerIdx * zSpacing;
-      const { rows, cols, values, labels, urls, shape: rawShape } = layer;
-      const shape = (rawShape || 'rectangle').toLowerCase().trim();
+      const { rows, cols, values, labels, urls, shape } = layer;
       const layerNodes: { x: number; y: number; z: number; val: number; label?: string; url?: string; r: number; c: number }[] = [];
 
       for (let r = 0; r < rows; r++) {
@@ -37,24 +37,18 @@ export const Graph3D: React.FC<Graph3DProps> = ({
           let x = 0;
           let y = 0;
 
-          if (shape === 'circle') {
+          if (shape === 'rectangle') {
+            x = (c - (cols - 1) / 2) * 1.5;
+            y = (r - (rows - 1) / 2) * 1.5;
+          } else if (shape === 'circle') {
             const angle = (2 * Math.PI * c) / cols;
             const radius = (r + 1) * 1.2;
             x = radius * Math.cos(angle);
             y = radius * Math.sin(angle);
           } else if (shape === 'triangle') {
-            // Skew the grid to form a triangular lattice
-            // Each row is shifted by 0.5 units relative to the previous one
-            x = (c - (r * 0.5)) * 1.5;
+            x = (c - r / 2) * 1.5;
             y = r * (Math.sqrt(3) / 2) * 1.5;
-            
-            // Center the skewed shape
-            x -= (cols / 4); 
             y -= (rows * Math.sqrt(3) / 4);
-          } else {
-            // Default to Rectangle
-            x = (c - (cols - 1) / 2) * 1.5;
-            y = (r - (rows - 1) / 2) * 1.5;
           }
 
           layerNodes.push({ 
@@ -67,8 +61,6 @@ export const Graph3D: React.FC<Graph3DProps> = ({
         }
       }
       allLayerNodes.push(layerNodes as any);
-
-      // ... (intra-layer edges logic remains same)
 
       // Add intra-layer edges to outline the shape
       const intraX: (number | null)[] = [];
@@ -129,13 +121,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({
         mode: showLabels ? 'markers+text' : 'markers',
         type: 'scatter3d',
         name: layer.name,
-        text: layerNodes.map(n => {
-          let t = `Value: ${n.val}`;
-          if (n.label) t += `<br>Label: ${n.label}`;
-          if (n.url) t += `<br>URL: ${n.url}`;
-          t += `<br>Shape: ${shape}`;
-          return t;
-        }),
+        text: layerNodes.map(n => n.label || n.val.toString()),
         textposition: 'top center',
         textfont: { size: 10, color: '#444' },
         hoverinfo: 'text+name',
@@ -249,7 +235,7 @@ export const Graph3D: React.FC<Graph3DProps> = ({
         Plotly.purge(plotRef.current);
       }
     };
-  }, [data, showLabels, showLayerNames, showInterLayerEdges]);
+  }, [data, showLabels, showLayerNames, showInterLayerEdges, zSpacing]);
 
   return (
     <div className="w-full h-[600px] bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
