@@ -124,12 +124,22 @@ export const Graph3D: React.FC<Graph3DProps> = ({
         text: layerNodes.map(n => n.label || n.val.toString()),
         textposition: 'top center',
         textfont: { size: 10, color: '#444' },
+        hovertext: layerNodes.map(n => {
+          let t = n.url ? `🔗 <b>Link Available</b><br>` : '';
+          t += `Value: ${n.val}`;
+          if (n.label) t += `<br>Label: ${n.label}`;
+          if (n.url) t += `<br>URL: ${n.url}`;
+          return t;
+        }),
         hoverinfo: 'text+name',
         marker: {
-          size: 6,
+          size: layerNodes.map(n => n.url ? 9 : 6),
           color: layer.color || `hsl(${layerIdx * 60}, 70%, 50%)`,
           opacity: 0.9,
-          line: { color: 'white', width: 0.5 }
+          line: { 
+            color: layerNodes.map(n => n.url ? '#FFD700' : 'white'), // Gold border for links
+            width: layerNodes.map(n => n.url ? 2 : 0.5) 
+          }
         },
         customdata: layerNodes.map(n => n.url)
       });
